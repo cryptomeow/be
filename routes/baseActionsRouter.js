@@ -53,6 +53,55 @@ router.get("/", function(req, res) {
 	});
 });
 
+
+/////////////// SUPPLY CAL
+function totalCoins(nHeight) {
+  var halveningBlocks = 210000 - 1;
+  var halvings  = Math.floor(nHeight / halveningBlocks);
+  var nSubsidy = 50.0;
+
+  var totalSupply = 0;
+  var halvenedBlocks = 0;
+  var curSubsidy = Array(halvings + 1).join(',').split('').reduce(x => {
+    halvenedBlocks += halveningBlocks;
+    totalSupply += halveningBlocks * x;
+    return x/2;
+  }, nSubsidy);
+  totalSupply += (nHeight - halvenedBlocks) * curSubsidy;
+
+  // apply past adjustment of lost/unclaimed coins
+  var adj = 2.579308461397886;
+  adj += 50; // unspendable genesis block
+  adj += 50; // duplicated coinbase #91880
+  totalSupply -= adj;
+
+  return totalSupply;
+};
+///
+
+var cachedBlockHeight = -1;
+var lastCachedBlockHeightTime = Date.now();
+var cacheHeightForSeconds = 5; // seconds of cache - const
+router.get("/api/current-supply", function(req, res) {
+	if (cachedBlockHeight !== -1) {
+	   if (Date.now() - lastCachedBlockHeightTime < cacheHeightForSeconds * 1000) {
+	          // Serve cache
+                  var blockCount = cachedBlockHeight;
+                  var tc = Number(totalCoins(blockCount)).toFixed(8);
+                  return res.send(String(tc));
+           }
+        }
+	var client = global.client;
+        rpcApi.getBlockchainInfo().then(function(getblockchaininfo) {
+                var blockCount = getblockchaininfo.blocks;
+                cachedBlockHeight = blockCount;
+	 	lastCachedBlockHeightTime = Date.now();
+		var tc = Number(totalCoins(blockCount)).toFixed(8);
+		res.send(String(tc));
+	});
+});
+
+
 // DISABLE
 if (0)
 router.get("/node-status", function(req, res) {
