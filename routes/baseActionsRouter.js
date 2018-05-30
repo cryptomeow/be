@@ -8,6 +8,8 @@ var bitcoinCore = require("bitcoin-core");
 var rpcApi = require("./../app/rpcApi");
 var qrcode = require('qrcode');
 var bitcoinjs = require('bitcoinjs-lib');
+var request = require('superagent');
+
 
 router.get("/", function(req, res) {
 	if (req.session.host == null || req.session.host.trim() == "") {
@@ -82,24 +84,119 @@ function totalCoins(nHeight) {
 var cachedBlockHeight = -1;
 var lastCachedBlockHeightTime = Date.now();
 var cacheHeightForSeconds = 5; // seconds of cache - const
-router.get("/api/current-supply", function(req, res) {
-	if (cachedBlockHeight !== -1) {
-	   if (Date.now() - lastCachedBlockHeightTime < cacheHeightForSeconds * 1000) {
-	          // Serve cache
+function getCachedBlockheight(cb) {
+     try {
+        if (cachedBlockHeight !== -1) {
+           if (Date.now() - lastCachedBlockHeightTime < cacheHeightForSeconds * 1000) {
+                  // Serve cache
                   var blockCount = cachedBlockHeight;
                   var tc = Number(totalCoins(blockCount)).toFixed(8);
-                  return res.send(String(tc));
+                  return cb(null, String(tc));
            }
         }
-	var client = global.client;
+        var client = global.client;
         rpcApi.getBlockchainInfo().then(function(getblockchaininfo) {
                 var blockCount = getblockchaininfo.blocks;
                 cachedBlockHeight = blockCount;
-	 	lastCachedBlockHeightTime = Date.now();
-		var tc = Number(totalCoins(blockCount)).toFixed(8);
-		res.send(String(tc));
-	});
+                lastCachedBlockHeightTime = Date.now();
+                var tc = Number(totalCoins(blockCount)).toFixed(8);
+                cb(null, String(tc));
+        });
+    } catch (e) {
+      console.error('Error getting cache blockheight:', e);
+      cb(e);
+    }
+}
+var getTotalCoins = getCachedBlockheight;
+function getDifficulty(cb) {
+      try {
+	rpcApi.getDifficulty().then(function(diff) {
+	     cb(null, diff);
+        });
+      } catch (e) {
+        console.error('Error getDifficultying:', e);
+	cb(e);
+      }
+}
+
+router.get("/api/current-supply", function(req, res) {
+        getTotalCoins(function(err, height) {
+            if (err) {
+                return res.status(500).send("{}");
+            }
+            return res.send(height);
+        });
 });
+
+function getBTCCInfo(cb) {
+        var data = {};
+        // Get: Current Supply
+        getTotalCoins(function(err, totalcoins) {
+            if (err) {
+                return cb(500);
+            }
+            data['currentsupply'] = totalcoins;
+            data['maxsupply'] = 21000000;
+            // Get: Diff
+            getDifficulty(function(err2, diff) {
+              if (err2) {
+                 return cb(500);
+              }
+              data['difficulty'] = diff;
+	      // Get: exchange rate BTCC_BTC (Cryptobridge)
+	      if (!(global.exchangeRate > 0)) {
+                 return cb(500);
+              }
+              data['btcc_btc'] = global.exchangeRate;
+              // Get: exchange rate BTC_USD (CMC)
+              request.get('https://api.coinmarketcap.com/v2/ticker/1/?convert=USD')
+		.end(function (err, res) {
+		    if (err) {
+                       console.error('Error getting BTCUSD:CMC', err);
+			return cb(500);
+                    }
+		    var market = res.body.data.quotes.USD.price;
+		    data['btc_usd'] = market;
+                    data['btcc_usd'] = parseFloat((parseFloat(market, 10) * parseFloat(data['btcc_btc'], 10)).toFixed(2), 10);
+		    // FINNN
+                    data['lastupdate'] = parseInt(Date.now() / 1e3, 10);
+                    cb(null, data);
+                });
+            });
+            // return res.send(height);
+        });
+}
+
+var lastTotalInfoCacheTime = Date.now();
+var lastTotalCache = null;
+var totalCacheLifetimeSeconds = 10; // seconds
+function getCacheBTCCInfo(cb) {
+    if (lastTotalCache !== null) {
+        if (Date.now() - lastTotalInfoCacheTime < totalCacheLifetimeSeconds * 1000) {
+	     // alive
+             return cb(null, lastTotalCache);
+        }
+   }
+
+   getBTCCInfo(function(err, info) {
+      if (!err) {
+        lastTotalCache = info;
+        lastTotalInfoCacheTime = Date.now();
+      }
+      cb(err, info);
+   });
+}
+
+router.get("/api/get-info", function(req, res) {
+        getCacheBTCCInfo(function(err, info) {
+            if (err) {
+                return res.status(500).send("{}");
+            }
+            res.send(info);
+       });
+});
+
+
 
 
 // DISABLE

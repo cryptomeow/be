@@ -113,7 +113,7 @@ app.runOnStartup = function() {
 	}
 
 	// refresh exchange rate periodically
-	setInterval(refreshExchangeRate, 1800000);
+	setInterval(refreshExchangeRate, 5 * 60 * 1000);
 };
 
 app.use(function(req, res, next) {

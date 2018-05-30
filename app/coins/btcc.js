@@ -155,7 +155,24 @@ module.exports = {
 			referenceUrl: "https://truevisionofsatoshi.com/"
 		},
 	],
-	exchangeRateData:{
+        exchangeRateData:{
+                jsonUrl:"https://api.crypto-bridge.org/api/v1/ticker",
+                exchangedCurrencyName:"btc",
+                responseBodySelectorFunction:function(responseBody) {
+                        // DISABLING TILL LISTED
+                        // return -1;
+                        for (var i = 0; i < responseBody.length; i++) {
+                            if (responseBody[i].id === 'BTCC_BTC') {
+                                return responseBody[i].last;
+                            }
+                        }
+                        // if (responseBody[0] && responseBody[0].price_usd) {
+                        //         return responseBody[0].price_usd;
+                        // }
+                        return -1;
+                }
+        },
+	exchangeRateDataCMC:{
 		jsonUrl:"https://api.coinmarketcap.com/v1/ticker/Bitcoin/",
 		exchangedCurrencyName:"usd",
 		responseBodySelectorFunction:function(responseBody) {

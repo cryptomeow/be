@@ -13,6 +13,22 @@ function getGenesisCoinbaseTransactionId() {
 	return coins[env.coin].genesisCoinbaseTransactionId;
 }
 
+function getDifficulty() {
+        return new Promise(function(resolve, reject) {
+                client.command('getdifficulty', function(err, result, resHeaders) {
+                        if (err) {
+                                console.log("Error 3qwrqrq0f: " + err);
+
+                                reject(err);
+
+                                return;
+                        }
+
+                        resolve(result);
+                });
+        });
+}
+
 function getBlockchainInfo() {
 	return new Promise(function(resolve, reject) {
 		client.command('getblockchaininfo', function(err, result, resHeaders) {
@@ -593,6 +609,7 @@ module.exports = {
 	getGenesisCoinbaseTransactionId: getGenesisCoinbaseTransactionId,
 	getBlockchainInfo: getBlockchainInfo,
 	getNetworkInfo: getNetworkInfo,
+        getDifficulty: getDifficulty,
 	getNetTotals: getNetTotals,
 	getMempoolInfo: getMempoolInfo,
 	getBlockByHeight: getBlockByHeight,
