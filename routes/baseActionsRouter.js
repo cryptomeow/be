@@ -53,6 +53,8 @@ router.get("/", function(req, res) {
 	});
 });
 
+// DISABLE
+if (0)
 router.get("/node-status", function(req, res) {
 	var client = global.client;
 
@@ -110,6 +112,7 @@ router.get("/mempool-summary", function(req, res) {
 	});
 });
 
+if (0)
 router.post("/connect", function(req, res) {
 	var host = req.body.host;
 	var port = req.body.port;
@@ -142,6 +145,7 @@ router.post("/connect", function(req, res) {
 	res.redirect("/");
 });
 
+if (0)
 router.get("/disconnect", function(req, res) {
 	res.cookie('rpc-host', "");
 	res.cookie('rpc-port', "");
@@ -161,6 +165,7 @@ router.get("/disconnect", function(req, res) {
 	res.redirect("/");
 });
 
+if (0)
 router.get("/changeSetting", function(req, res) {
 	if (req.query.name) {
 		req.session[req.query.name] = req.query.value;
@@ -466,6 +471,7 @@ router.get("/address/:address", function(req, res) {
 	});
 });
 
+if (0)
 router.get("/rpc-terminal", function(req, res) {
 	if (!env.demoSite) {
 		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -481,6 +487,7 @@ router.get("/rpc-terminal", function(req, res) {
 	res.render("terminal");
 });
 
+if (0)
 router.post("/rpc-terminal", function(req, res) {
 	if (!env.demoSite) {
 		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -539,6 +546,7 @@ router.post("/rpc-terminal", function(req, res) {
 	});
 });
 
+if (0)
 router.get("/rpc-browser", function(req, res) {
 	if (!env.demoSite) {
 		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
