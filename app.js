@@ -8,7 +8,10 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var session = require("express-session");
+
+var session = require('express-session');
+var MemoryStore = require('memorystore')(session);
+
 var env = require("./app/env.js");
 var simpleGit = require('simple-git');
 var utils = require("./app/utils.js");
@@ -26,7 +29,7 @@ var qrcode = require("qrcode");
 var baseActionsRouter = require('./routes/baseActionsRouter');
 
 var app = express();
-
+console.log('#Env:', process.env.NODE_ENV, '- Port:', process.env.PORT || 3002);
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 
@@ -44,11 +47,20 @@ app.use(logger('production'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+// app.use(session({
+//	secret: env.cookiePassword,
+//	resave: false,
+//	saveUninitialized: false
+// }));
 app.use(session({
-	secret: env.cookiePassword,
-	resave: false,
-	saveUninitialized: false
-}));
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
+    resave: false,
+    saveUninitialized: false,
+    secret: env.cookiePassword,
+}))
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 
@@ -72,7 +84,7 @@ function refreshExchangeRate() {
 				console.log("Error:");
 				console.log(error);
 				console.log("Response:");
-				console.log(response);
+				console.log(response.body ? response.body : response);
 			}
 		});
 	}

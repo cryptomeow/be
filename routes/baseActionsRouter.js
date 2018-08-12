@@ -122,11 +122,21 @@ function getDifficulty(cb) {
 router.get("/api/current-supply", function(req, res) {
         getTotalCoins(function(err, height) {
             if (err) {
-                return res.status(500).send("{}");
+                return res.status(500).send("");
             }
             return res.send(height);
         });
 });
+
+router.get("/api/current-supply-sats", function(req, res) {
+        getTotalCoins(function(err, height) {
+            if (err) {
+                return res.status(500).send("");
+            }
+            return res.send(String(height).replace('.', ''));
+        });
+});
+
 
 function getBTCCInfo(cb) {
         var data = {};

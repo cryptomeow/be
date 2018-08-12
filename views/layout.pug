@@ -45,7 +45,7 @@ html
 												span  #{item.name}
 
 							li(class="nav-item dropdown")
-								a(class="nav-link dropdown-toggle", href="javascript:void(0)", id="navbarDropdown", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") 
+								a(class="nav-link dropdown-toggle", style="display:none", href="javascript:void(0)", id="navbarDropdown", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") 
 									i(class="fas fa-cog")
 									span  Settings
 								div(class="dropdown-menu", aria-labelledby="navbarDropdown")
@@ -78,6 +78,9 @@ html
 				if (coinConfig.historicalData && coinConfig.historicalData.length > 0)
 					li(class="nav-item")
 						a(href="/fun", class="nav-link") #{coinConfig.name} Fun
+				li(class="nav-item")
+					a(href="https://oldbcl.truevisionofsatoshi.com/", class="nav-link") Clashic/BCHC
+
 
 			hr
 				
