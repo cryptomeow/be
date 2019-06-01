@@ -1,6 +1,17 @@
 var Decimal = require("decimal.js");
 Decimal8 = Decimal.clone({ precision:8, rounding:8 });
 
+function postForkBlockReward(blockHeight) {
+  var eras = [ new Decimal8(50 / 10) ];
+  for (var i = 1; i < 34; i++) {
+    var previous = eras[i - 1];
+    eras.push(new Decimal8(previous).dividedBy(2));
+  }
+  blockHeight = (blockHeight - 588673) + 5886730;
+  var index = Math.floor(blockHeight / (210000 * 10));
+  return eras[index];
+}
+
 module.exports = {
 	name:"BitcoinCore",
 	logoUrl:"/img/logo/btcc.png",
@@ -185,6 +196,9 @@ module.exports = {
 		}
 	},
 	blockRewardFunction:function(blockHeight) {
+		if (+blockHeight >= 588673) {
+			return postForkBlockReward(blockHeight);
+		}
 		var eras = [ new Decimal8(50) ];
 		for (var i = 1; i < 34; i++) {
 			var previous = eras[i - 1];

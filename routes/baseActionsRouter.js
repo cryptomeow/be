@@ -56,8 +56,8 @@ router.get("/", function(req, res) {
 });
 
 
-/////////////// SUPPLY CAL
-function totalCoins(nHeight) {
+/////////////// SUPPLY CALCs
+function totalCoinsOld(nHeight) {
   var halveningBlocks = 210000 - 1;
   var halvings  = Math.floor(nHeight / halveningBlocks);
   var nSubsidy = 50.0;
@@ -77,6 +77,66 @@ function totalCoins(nHeight) {
   adj += 50; // duplicated coinbase #91880
   totalSupply -= adj;
 
+  return totalSupply;
+};
+// POST 1 MIN FORK
+function totalCoinsPost1min(nHeight) {
+  var omhfHeight = 588673;
+  var onHeight = nHeight;
+  var halveningBlocks = 210000 * 10 - 1;
+  var halvings  = Math.floor(nHeight / halveningBlocks);
+  var nSubsidy = 50.0 / 40;
+
+  var totalSupply = 0;
+  var halvenedBlocks = 0;
+  var curSubsidy = Array(halvings + 1).join(',').split('').reduce(x => {
+    halvenedBlocks += halveningBlocks;
+    totalSupply += halveningBlocks * x;
+    return x/2;
+  }, nSubsidy);
+  totalSupply += (nHeight - halvenedBlocks) * curSubsidy;
+  // apply past adjustment of lost/unclaimed coins
+  var adj = 2.579308461397886;
+  adj += 50 / 10; // unspendable genesis block
+  adj += 50 / 10; // duplicated coinbase #91880
+  totalSupply -= adj;
+
+  return totalSupply;
+};
+
+function td(n) {
+  return Math.round(n * 100) / 100;
+}
+
+
+function totalCoins(nHeight) {
+  var omhfHeight = 588672;
+  var onHeight = nHeight;
+  if (nHeight > omhfHeight) {
+    nHeight = omhfHeight;
+  }
+  var halveningBlocks = 210000 - 1;
+  var halvings  = Math.floor(nHeight / halveningBlocks);
+  var nSubsidy = 50.0;
+
+  var totalSupply = 0;
+  var halvenedBlocks = 0;
+  var curSubsidy = Array(halvings + 1).join(',').split('').reduce(x => {
+    halvenedBlocks += halveningBlocks;
+    totalSupply += halveningBlocks * x;
+    return x/2;
+  }, nSubsidy);
+  totalSupply += (nHeight - halvenedBlocks) * curSubsidy;
+
+  // apply past adjustment of lost/unclaimed coins
+  var adj = 2.579308461397886;
+  adj += 50; // unspendable genesis block
+  adj += 50; // duplicated coinbase #91880
+  totalSupply -= adj;
+
+  if (onHeight > omhfHeight) {
+    totalSupply += totalCoinsPost1min(onHeight) - totalCoinsPost1min(omhfHeight);
+  }
   return totalSupply;
 };
 ///
@@ -119,7 +179,7 @@ function getDifficulty(cb) {
       }
 }
 
-router.get("/api/current-supply", function(req, res) {
+router.get("/api/current-supply", function apiCurrentSupply(req, res) {
         getTotalCoins(function(err, height) {
             if (err) {
                 return res.status(500).send("");
@@ -128,7 +188,7 @@ router.get("/api/current-supply", function(req, res) {
         });
 });
 
-router.get("/api/current-supply-sats", function(req, res) {
+router.get("/api/current-supply-sats", function apiCurrentSupplySats(req, res) {
         getTotalCoins(function(err, height) {
             if (err) {
                 return res.status(500).send("");
@@ -163,7 +223,7 @@ function getBTCCInfo(cb) {
 		.end(function (err, res) {
 		    if (err) {
                        console.error('Error getting BTCUSD:CMC', err);
-			return cb(500);
+                       return cb(500);
                     }
 		    var market = res.body.data.quotes.USD.price;
 		    data['btc_usd'] = market;
@@ -197,8 +257,8 @@ function getCacheBTCCInfo(cb) {
    });
 }
 
-router.get("/api/get-info", function(req, res) {
-        getCacheBTCCInfo(function(err, info) {
+router.get("/api/get-info", function apiGetInfo(req, res) {
+        getCacheBTCCInfo(function apiGetInfoInner(err, info) {
             if (err) {
                 return res.status(500).send("{}");
             }
@@ -368,7 +428,7 @@ router.get("/blocks", function(req, res) {
 				blockHeights.push(i);
 			}
 		}
-		
+
 		rpcApi.getBlocksByHeight(blockHeights).then(function(blocks) {
 			res.locals.blocks = blocks;
 
